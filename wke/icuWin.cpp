@@ -1233,20 +1233,44 @@ ucnv_toUnicode(UConverter *cnv,
                UBool flush,
                UErrorCode *err)
 {
-    while (*source < sourceLimit && *target < targetLimit)
-    {
-        char c = *((*source)++);
-        UChar uc;
-        if (cnv->conv(c, uc))
-        {
-            *((*target)++) = uc;
-        }
-    }
+	int codepage = cnv->charset->codePage;
 
-    if (*source < sourceLimit)
-        *err = U_BUFFER_OVERFLOW_ERROR;
-    else
-        *err = U_ZERO_ERROR;
+	if (codepage != 54936)
+	{
+		while (*source < sourceLimit && *target < targetLimit)
+		{
+			char c = *((*source)++);
+			UChar uc;
+			if (cnv->conv(c, uc))
+			{
+				*((*target)++) = uc;
+			}
+		}
+
+		if (*source < sourceLimit)
+			*err = U_BUFFER_OVERFLOW_ERROR;
+		else
+			*err = U_ZERO_ERROR;
+	}
+	else
+	{
+		int origin_size = sourceLimit - *source;
+		int target_size = targetLimit - *target;
+
+		int conv_size = min(origin_size, target_size);
+
+		int require_size = MultiByteToWideChar(cnv->charset->codePage, 0, *source, conv_size, NULL, 0);
+
+		int result_size = MultiByteToWideChar(cnv->charset->codePage, 0, *source, conv_size, *target, require_size);
+
+		*source += conv_size;
+		*target += result_size;
+
+		if (conv_size < origin_size)
+			*err = U_BUFFER_OVERFLOW_ERROR;
+		else
+			*err = U_ZERO_ERROR;
+	}
 }
 
 void
