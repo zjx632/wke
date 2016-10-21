@@ -1194,6 +1194,61 @@ struct UConverter
     }
 };
 
+namespace /* MLang */{
+	typedef HRESULT(WINAPI *CONVERTINETSTRING)(
+		LPDWORD lpdwMode,
+		DWORD dwSrcEncoding,
+		DWORD dwDstEncoding,
+		LPCSTR lpSrcStr,
+		LPINT lpnSrcSize,
+		LPBYTE lpDstStr,
+		LPINT lpnDstSize
+		);
+	typedef HRESULT(WINAPI *CONVERTINETMULTIBYTETOUNICODE)(
+		LPDWORD lpdwMode,
+		DWORD dwSrcEncoding,
+		LPCSTR lpSrcStr,
+		LPINT lpnMultiCharCount,
+		LPWSTR lpDstStr,
+		LPINT lpnWideCharCount
+		);
+	typedef HRESULT(WINAPI *CONVERTINETUNICODETOMULTIBYTE)(
+		LPDWORD lpdwMode,
+		DWORD dwEncoding,
+		LPCWSTR lpSrcStr,
+		LPINT lpnWideCharCount,
+		LPSTR lpDstStr,
+		LPINT lpnMultiCharCount
+		);
+	typedef HRESULT(WINAPI *ISCONVERTINETSTRINGAVAILABLE)(
+		DWORD dwSrcEncoding,
+		DWORD dwDstEncoding
+		);
+
+
+
+	static CONVERTINETSTRING MyConvertINetString = NULL;
+	static CONVERTINETMULTIBYTETOUNICODE MyConvertINetMultiByteToUnicode = NULL;
+	static CONVERTINETUNICODETOMULTIBYTE MyConvertINetUnicodeToMultiByte = NULL;
+	static ISCONVERTINETSTRINGAVAILABLE MyIsConvertINetStringAvailable = NULL;
+
+
+	static int load_mlang()
+	{
+		HMODULE h;
+		if (MyConvertINetString != NULL)
+			return TRUE;
+		h = LoadLibraryA("mlang.dll");
+		if (!h)
+			return FALSE;
+		MyConvertINetString = (CONVERTINETSTRING)GetProcAddress(h, "ConvertINetString");
+		MyConvertINetMultiByteToUnicode = (CONVERTINETMULTIBYTETOUNICODE)GetProcAddress(h, "ConvertINetMultiByteToUnicode");
+		MyConvertINetUnicodeToMultiByte = (CONVERTINETUNICODETOMULTIBYTE)GetProcAddress(h, "ConvertINetUnicodeToMultiByte");
+		MyIsConvertINetStringAvailable = (ISCONVERTINETSTRINGAVAILABLE)GetProcAddress(h, "IsConvertINetStringAvailable");
+		return TRUE;
+	}
+}
+
 UConverter*
 ucnv_open (const char *name, UErrorCode * err)
 {
@@ -1233,44 +1288,26 @@ ucnv_toUnicode(UConverter *cnv,
                UBool flush,
                UErrorCode *err)
 {
-	int codepage = cnv->charset->codePage;
+	int source_size = sourceLimit - *source;
+	int target_size = targetLimit - *target;
 
-	if (codepage != 54936)
-	{
-		while (*source < sourceLimit && *target < targetLimit)
-		{
-			char c = *((*source)++);
-			UChar uc;
-			if (cnv->conv(c, uc))
-			{
-				*((*target)++) = uc;
-			}
-		}
+	int origin_size = min(source_size, target_size), 
+		result_size = origin_size;
 
-		if (*source < sourceLimit)
-			*err = U_BUFFER_OVERFLOW_ERROR;
-		else
-			*err = U_ZERO_ERROR;
-	}
-	else
-	{
-		int origin_size = sourceLimit - *source;
-		int target_size = targetLimit - *target;
+	DWORD dwMode = 0;
 
-		int conv_size = min(origin_size, target_size);
+	HRESULT hRet = MyConvertINetMultiByteToUnicode(&dwMode, cnv->charset->codePage,
+		*source, &origin_size, *target, &result_size);
 
-		int require_size = MultiByteToWideChar(cnv->charset->codePage, 0, *source, conv_size, NULL, 0);
-
-		int result_size = MultiByteToWideChar(cnv->charset->codePage, 0, *source, conv_size, *target, require_size);
-
-		*source += conv_size;
+	if (S_OK == hRet) {	
+		*source += origin_size;
 		*target += result_size;
-
-		if (conv_size < origin_size)
-			*err = U_BUFFER_OVERFLOW_ERROR;
-		else
-			*err = U_ZERO_ERROR;
 	}
+
+	if (*source < sourceLimit)
+		*err = U_BUFFER_OVERFLOW_ERROR;
+	else
+		*err = U_ZERO_ERROR;
 }
 
 void
@@ -2002,6 +2039,8 @@ ucal_getTimeZoneDisplayName(const UCalendar*          cal,
 void icuwin_init()
 {
     initCharsets();
+
+	load_mlang();
 }
 
 const char* icuwin_getDefaultEncoding()
