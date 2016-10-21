@@ -346,7 +346,7 @@ wkeJSValue wkeJSCallGlobal(wkeJSState* es, wkeJSValue func, wkeJSValue* args, in
     return wkeJSCall(es, func, wkeJSUndefined(es), args, argCount);
 }
 
-wkeJSValue wkeJSGet(wkeJSState* es, wkeJSValue object, const char* prop)
+wkeJSValue wkeJSGet(wkeJSState* es, wkeJSValue object, const utf8* prop)
 {
     //cexer
     //不能使用JSC::Identifier((JSC::ExecState*)es, prop)构造JSC::Identifier，因JSC::UString内部把const char*地址作为hash值，
@@ -369,7 +369,7 @@ wkeJSValue wkeJSGet(wkeJSState* es, wkeJSValue object, const char* prop)
     return ret;
 }
 
-void wkeJSSet(wkeJSState* es, wkeJSValue object, const char* prop, wkeJSValue value)
+void wkeJSSet(wkeJSState* es, wkeJSValue object, const utf8* prop, wkeJSValue value)
 {
     //cexer
     //不能使用JSC::Identifier((JSC::ExecState*)es, prop)构造JSC::Identifier，因JSC::UString内部把const char*地址作为hash值，
@@ -391,14 +391,35 @@ void wkeJSSet(wkeJSState* es, wkeJSValue object, const char* prop, wkeJSValue va
     }
 }
 
-wkeJSValue wkeJSGetGlobal(wkeJSState* es, const char* prop)
+wkeJSValue wkeJSGetW(wkeJSState* es, wkeJSValue object, const wchar_t* prop) 
+{
+	return wkeJSGet(es, object, String(prop).utf8().data());
+}
+
+void wkeJSSetW(wkeJSState* es, wkeJSValue object, const wchar_t* prop, wkeJSValue v)
+{
+	wkeJSSet(es, object, String(prop).utf8().data(), v);
+}
+
+
+wkeJSValue wkeJSGetGlobal(wkeJSState* es, const utf8* prop)
 {
     return wkeJSGet(es, wkeJSGlobalObject(es), prop);
 }
 
-void wkeJSSetGlobal(wkeJSState* es, const char* prop, wkeJSValue v)
+void wkeJSSetGlobal(wkeJSState* es, const utf8* prop, wkeJSValue v)
 {
     wkeJSSet(es, wkeJSGlobalObject(es), prop, v);
+}
+
+wkeJSValue wkeJSGetGlobalW(wkeJSState* es, const wchar_t* prop)
+{
+	return wkeJSGetW(es, wkeJSGlobalObject(es), prop);
+}
+
+void wkeJSSetGlobalW(wkeJSState* es, const wchar_t* prop, wkeJSValue v)
+{
+	wkeJSSetW(es, wkeJSGlobalObject(es), prop, v);
 }
 
 wkeJSValue wkeJSGetAt(wkeJSState* es, wkeJSValue object, int index)

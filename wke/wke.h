@@ -535,8 +535,10 @@ WKE_API wkeJSValue  WKE_CALL wkeJSObject(wkeJSState* es, wkeJSData* obj);
 WKE_API wkeJSValue  WKE_CALL wkeJSFunction(wkeJSState* es, wkeJSData* obj);
 WKE_API wkeJSData*  WKE_CALL wkeJSGetData(wkeJSState* es, wkeJSValue object);
 
-WKE_API wkeJSValue  WKE_CALL wkeJSGet(wkeJSState* es, wkeJSValue object, const char* prop);
-WKE_API void       WKE_CALL wkeJSSet(wkeJSState* es, wkeJSValue object, const char* prop, wkeJSValue v);
+WKE_API wkeJSValue  WKE_CALL wkeJSGet(wkeJSState* es, wkeJSValue object, const utf8* prop);
+WKE_API void       WKE_CALL wkeJSSet(wkeJSState* es, wkeJSValue object, const utf8* prop, wkeJSValue v);
+WKE_API wkeJSValue  WKE_CALL wkeJSGetW(wkeJSState* es, wkeJSValue object, const wchar_t* prop);
+WKE_API void       WKE_CALL wkeJSSetW(wkeJSState* es, wkeJSValue object, const wchar_t* prop, wkeJSValue v);
 
 WKE_API wkeJSValue  WKE_CALL wkeJSGetAt(wkeJSState* es, wkeJSValue object, int index);
 WKE_API void       WKE_CALL wkeJSSetAt(wkeJSState* es, wkeJSValue object, int index, wkeJSValue v);
@@ -554,9 +556,10 @@ WKE_API wkeJSValue  WKE_CALL wkeJSEvalW(wkeJSState* es, const wchar_t* str);
 WKE_API wkeJSValue  WKE_CALL wkeJSCall(wkeJSState* es, wkeJSValue func, wkeJSValue thisObject, wkeJSValue* args, int argCount);
 WKE_API wkeJSValue  WKE_CALL wkeJSCallGlobal(wkeJSState* es, wkeJSValue func, wkeJSValue* args, int argCount);
 
-WKE_API wkeJSValue  WKE_CALL wkeJSGetGlobal(wkeJSState* es, const char* prop);
-WKE_API void       WKE_CALL wkeJSSetGlobal(wkeJSState* es, const char* prop, wkeJSValue v);
-
+WKE_API wkeJSValue  WKE_CALL wkeJSGetGlobal(wkeJSState* es, const utf8* prop);
+WKE_API void       WKE_CALL wkeJSSetGlobal(wkeJSState* es, const utf8* prop, wkeJSValue v);
+WKE_API wkeJSValue  WKE_CALL wkeJSGetGlobalW(wkeJSState* es, const wchar_t* prop);
+WKE_API void       WKE_CALL wkeJSSetGlobalW(wkeJSState* es, const wchar_t* prop, wkeJSValue v);
 
 WKE_API void       WKE_CALL  wkeJSAddRef(wkeJSState* es, wkeJSValue v);
 WKE_API void       WKE_CALL  wkeJSReleaseRef(wkeJSState* es, wkeJSValue v);
